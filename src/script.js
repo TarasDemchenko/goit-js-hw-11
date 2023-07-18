@@ -2,6 +2,7 @@ import axios from 'axios';
 import Notiflix from 'notiflix';
 
 const API_KEY = '38310547-46b116b28ccce7cbd05875092';
+let currentPage = 1;
 
 function getSmallImageUrl(image) {
   return image.webformatURL;
@@ -13,7 +14,6 @@ function getLargeImageUrl(image) {
 
 function renderImageCards(images) {
   const gallery = document.querySelector('.gallery');
-  gallery.innerHTML = '';
 
   images.forEach(image => {
     const card = createImageCard(image);
@@ -91,8 +91,8 @@ async function fetchImages(searchQuery, page = 1) {
         orientation: 'horizontal',
         safesearch: true,
         page,
-        per_page: 40
-      }
+        per_page: 40,
+      },
     });
 
     return response.data.hits;
@@ -114,11 +114,14 @@ async function searchImages(event) {
   }
 
   try {
+    currentPage = 1;
     const images = await fetchImages(searchQuery);
     renderImageCards(images);
 
     if (images.length === 0) {
-      Notiflix.Notify.info('Sorry, there are no images matching your search query. Please try again.');
+      Notiflix.Notify.info(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
     }
 
     searchInput.value = '';
@@ -134,24 +137,20 @@ async function loadMoreImages() {
   const searchQuery = searchInput.value.trim();
 
   try {
-    const images = await fetchImages(searchQuery, getNextPage());
-    renderImageCards(images);
-
+    const images = await fetchImages(searchQuery, currentPage + 1);
     if (images.length === 0) {
-      Notiflix.Notify.info('We\'re sorry, but you\'ve reached the end of search results.');
+      Notiflix.Notify.info(
+        "We're sorry, but you've reached the end of search results."
+      );
+      hideLoadMoreButton();
+    } else {
+      currentPage++;
+      renderImageCards(images);
     }
   } catch (error) {
     console.log(error);
     Notiflix.Notify.failure('Error');
   }
-}
-
-function getNextPage() {
-  const loadMoreButton = document.querySelector('.load-more');
-  const nextPage = +loadMoreButton.dataset.page + 1;
-  loadMoreButton.dataset.page = nextPage;
-
-  return nextPage;
 }
 
 function showLoadMoreButton() {
